@@ -46,5 +46,5 @@ The system is built with a modern, decoupled stack:
 ### Installation & Run
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/gemma4-safety-guard.git
+   git clone https://github.com/RetroJoshua/gemma4-safety-guard.git
    cd gemma4-safety-guard
