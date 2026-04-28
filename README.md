@@ -1,4 +1,4 @@
-"""# Gemma 4 Safety Guard Engine (27B) — FastAPI + Streamlit + Ollama
+# Gemma 4 Safety Guard Engine (27B) — FastAPI + Streamlit + Ollama
 - `API_URL` (example: `http://api:8000`)
 
 **Important:** make sure your `main.py` and `app.py` read these env vars (otherwise they may default to `localhost` and fail inside Docker).
@@ -79,4 +79,3 @@ docker compose logs -f frontend
 ---
 
 Made for social good during the Gemma 4 Good Hackathon.
-"""
