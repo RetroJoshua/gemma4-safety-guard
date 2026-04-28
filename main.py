@@ -1,15 +1,19 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
-import httpx
-import json
+import os  
+from fastapi import FastAPI, HTTPException  
+from pydantic import BaseModel, Field  
+import httpx  
+import json  
+  
+GEMMA_API_URL = os.getenv("GEMMA_API_URL", "http://localhost:11434/api/generate")  
+MODEL_NAME = os.getenv("MODEL_NAME", "gemma4:27b")
 
 app = FastAPI(
     title="Gemma 4 Good: Safety Guard Engine",
     description="A trust layer using Gemma 4 27B with RAG grounding and function calling."
 )
 
-GEMMA_API_URL = "http://localhost:11434/api/generate"
-MODEL_NAME = "gemma4:27b"
+#GEMMA_API_URL = "http://localhost:11434/api/generate"
+#MODEL_NAME = "gemma4:27b"
 
 # ─────────────────────────────────────────────
 # MOCK KNOWLEDGE BASE (replace with real vector DB like ChromaDB / FAISS)

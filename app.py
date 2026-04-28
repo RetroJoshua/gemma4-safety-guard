@@ -1,8 +1,9 @@
+import os
 import streamlit as st
 import httpx
 import json
 
-API_URL = "http://localhost:8000"  # overridden by env var in Docker
+API_URL = os.getenv("API_URL", "http://localhost:8000")
 
 st.set_page_config(
     page_title="Gemma 4 Safety Guard",
