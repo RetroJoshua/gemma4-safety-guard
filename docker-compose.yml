@@ -1,0 +1,59 @@
+version: "3.9"
+
+services:
+
+  # ── Gemma 4 27B via Ollama ──────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: gemma4_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama   # persists downloaded model weights
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]   # remove this block if running CPU-only
+    entrypoint: >
+      sh -c "ollama serve & sleep 5 && ollama pull gemma4:27b && wait"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ── FastAPI Safety Engine ───────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: gemma4_api
+    ports:
+      - "8000:8000"
+    environment:
+      - GEMMA_API_URL=http://ollama:11434/api/generate
+      - MODEL_NAME=gemma4:27b
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: on-failure
+
+  # ── Streamlit Frontend ──────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: gemma4_frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://api:8000
+    depends_on:
+      - api
+    restart: on-failure
+
+volumes:
+  ollama_data:
