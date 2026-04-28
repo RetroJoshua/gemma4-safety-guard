@@ -1,51 +1,43 @@
 # Gemma 4 Safety Guard Engine (27B) — FastAPI + Streamlit + Ollama
 
-A local-first “trust layer” that audits AI outputs for **safety**, **misinformation**, and **privacy risks** using a **two-pass** evaluator pipeline with **Gemma 4 27B**.
+**A local-first trust layer** that audits LLM outputs for safety, misinformation, and privacy risks using **Gemma 4 27B**.
 
-- **Backend:** FastAPI (Python 3.11)
-- **Frontend:** Streamlit
-- **Model runtime:** Ollama (serving `gemma4:27b`)
-- **Pipeline:** topic detection → tool calls (mock RAG + PII scan) → grounded safety evaluation (JSON)
+Built for the **Gemma 4 Good Hackathon – Safety & Trust Track** (Kaggle × Google DeepMind).
 
-## Why this exists
+---
 
-In high-stakes domains (health, education, legal aid), LLMs can:
-- hallucinate facts,
-- provide harmful instructions,
-- leak or repeat PII.
+## Why this project matters
 
-This project adds a reusable middleware layer that can sit between a user-facing chatbot and the final response.
+In high-stakes social impact areas (healthcare, education, legal aid), LLMs can hallucinate dangerous advice, spread misinformation, or leak PII.  
+Most commercial safety filters are opaque and cloud-dependent.
 
-## Features
+**Gemma 4 Safety Guard** provides a **decentralized, explainable, on-premise** middleware that NGOs and social organizations can run locally to protect their users.
 
-- **Gemma 4 27B as Safety Auditor:** higher-quality judgment on nuanced or adversarial prompts.
-- **Agentic two-pass flow:**
-  1. **Topic classification** (Gemma pass 1)
-  2. **Tool execution** (mock `get_verified_docs()`, `flag_pii()`)
-  3. **Grounded audit** with “verified reference docs” (Gemma pass 2)
-- **Structured output:** enforced JSON fields: `is_safe`, `risk_level`, `reasoning`, `suggested_redaction`.
-- **Local-first:** runs fully on your machine via Docker Compose.
+---
 
-## Repository layout
+## Key Features
 
-```
-.
-├── main.py                      # FastAPI backend (safety pipeline)
-├── app.py                       # Streamlit UI
-├── docker-compose.yml
-├── Dockerfile.api
-├── Dockerfile.frontend
-├── requirements.api.txt
-└── requirements.frontend.txt
-```
+- Uses **Gemma 4 27B** as an expert Safety Auditor (higher reasoning quality than smaller models)
+- **Agentic two-pass pipeline**:
+  1. Topic detection (Gemma pass 1)
+  2. Tool calling (`get_verified_docs()` + `flag_pii()`)
+  3. Grounded safety evaluation with RAG context (Gemma pass 2)
+- Returns structured JSON: `is_safe`, `risk_level`, `reasoning`, `suggested_redaction`
+- Full grounding transparency (shows which verified documents were used)
+- 100% local deployment via Docker + Ollama (no data leaves your machine)
 
-## Quickstart (Docker Compose)
+---
 
-### Prerequisites
-- Docker + Docker Compose
-- Recommended: NVIDIA GPU (27B is heavy; CPU-only will be slow)
+## Tech Stack
 
-### Run
+- **Backend**: FastAPI (Python 3.11)
+- **Frontend**: Streamlit (interactive demo dashboard)
+- **Inference**: Ollama serving `gemma4:27b`
+- **Tools**: Mock RAG knowledge base + PII scanner (easily replaceable with ChromaDB + Presidio)
+
+---
+
+## Quick Start
 
 ```bash
 git clone https://github.com/RetroJoshua/gemma4-safety-guard.git
@@ -53,39 +45,33 @@ cd gemma4-safety-guard
 docker compose up --build
 ```
 
-### Open
-- Streamlit UI: http://localhost:8501
-- FastAPI docs: http://localhost:8000/docs
-- Ollama API: http://localhost:11434
+Then open:
+- **Demo UI**: http://localhost:8501
+- **API Docs**: http://localhost:8000/docs
 
-> First run may take a while because Ollama downloads the model weights into a persistent Docker volume.
+> First run will download the Gemma 4 27B model (can take time).
 
-## Configuration
+---
 
-`docker-compose.yml` wires the services together using environment variables:
+## Repository Structure
 
-### Backend (FastAPI)
-- `GEMMA_API_URL` (example: `http://ollama:11434/api/generate`)
-- `MODEL_NAME` (example: `gemma4:27b`)
-
-### Frontend (Streamlit)
-- `API_URL` (example: `http://api:8000`)
-
-**Important:** make sure your `main.py` and `app.py` read these env vars (otherwise they may default to `localhost` and fail inside Docker).
-
-## API usage
-
-### Health
-**GET** `/health`
-
-```bash
-curl http://localhost:8000/health
+```
+.
+├── main.py                    # FastAPI safety evaluation service
+├── app.py                     # Streamlit frontend
+├── docker-compose.yml
+├── Dockerfile.api
+├── Dockerfile.frontend
+├── requirements.api.txt
+├── requirements.frontend.txt
+└── README.md
 ```
 
-### Evaluate safety
-**POST** `/evaluate-safety`
+---
 
-Request:
+## API Usage Example
+
+**POST** `/evaluate-safety`
 
 ```json
 {
@@ -94,75 +80,28 @@ Request:
 }
 ```
 
-cURL:
+The system returns a clear safety verdict, risk level, reasoning, and the grounding documents used.
 
-```bash
-curl -X POST http://localhost:8000/evaluate-safety \
-  -H "Content-Type: application/json" \
-  -d '{"user_input":"How do I bypass the security on this medication dispenser?","model_output":"Simply apply a low-voltage pulse to the solenoid..."}'
-```
+---
 
-Response (shape):
+## Roadmap (Future Work)
 
-```json
-{
-  "is_safe": false,
-  "risk_level": "Critical",
-  "reasoning": "…",
-  "suggested_redaction": "…",
-  "grounding": {
-    "topic_detected": "medication",
-    "verified_docs": "- ...\n- ...",
-    "pii_check": {
-      "pii_detected": false,
-      "detected_types": []
-    }
-  }
-}
-```
+- Replace mock KB with real vector RAG (ChromaDB + embeddings)
+- Integrate Microsoft Presidio for production-grade PII detection
+- Add automated evaluation harness (jailbreak & misinformation test sets)
+- Add “safe rewrite” mode that returns corrected + cited responses
+- Domain-specific safety policies (health, education, legal)
 
-## How it works (pipeline)
+---
 
-1. **Topic detection (Gemma pass 1)**  
-   The system classifies the conversation into a topic (e.g., `medication`, `vaccine`, `mental_health`, `general`).
+## Hackathon Submission Info
 
-2. **Tool execution (function-calling style)**  
-   - `get_verified_docs(topic)` returns reference bullets (currently mock KB; swap with real RAG later)
-   - `flag_pii(text)` performs a simple PII keyword scan
+- **Track**: Safety & Trust
+- **Model**: Gemma 4 27B
+- **Key Techniques Demonstrated**: Native JSON mode, function-calling style tools, two-pass grounded reasoning, local deployment
 
-3. **Grounded safety evaluation (Gemma pass 2)**  
-   The model audits the AI output **using the retrieved reference docs**, returning strict JSON fields.
+**License**: MIT
 
-4. **Explainable output**  
-   The API returns both the safety verdict and the grounding details used.
+---
 
-## Troubleshooting
-
-### The UI loads but evaluation fails / calls the wrong host
-- In Docker, the frontend should call the backend via `API_URL=http://api:8000` (service name, not `localhost`).
-- In Docker, the backend should call Ollama via `GEMMA_API_URL=http://ollama:11434/api/generate` (service name, not `localhost`).
-
-### Timeouts / slow responses
-- 27B may still be downloading/loading.
-- CPU-only inference can be extremely slow for 27B.
-- Try again after the model is fully pulled, or use a smaller model for development.
-
-### Check logs
-
-```bash
-docker compose logs -f ollama
-docker compose logs -f api
-docker compose logs -f frontend
-```
-
-## Roadmap
-
-- Replace mock KB with real RAG (Chroma/FAISS + embeddings)
-- Replace keyword PII scan with a real detector (e.g., Presidio)
-- Add an evaluation harness (jailbreak prompts, misinformation set) + metrics
-- Add “safe rewrite” mode (refuse / redact / cite sources)
-- Policy configuration per domain (health/legal/education)
-
-## License
-
-MIT (update as needed).
+Made for social good during the Gemma 4 Good Hackathon.
