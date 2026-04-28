@@ -1,71 +1,7 @@
-# Gemma 4 Safety Guard Engine (27B) — FastAPI + Streamlit + Ollama
+"""# Gemma 4 Safety Guard Engine (27B) — FastAPI + Streamlit + Ollama
+- `API_URL` (example: `http://api:8000`)
 
-**A local-first trust layer** that audits LLM outputs for safety, misinformation, and privacy risks using **Gemma 4 27B**.
-
-Built for the **Gemma 4 Good Hackathon – Safety & Trust Track** (Kaggle × Google DeepMind).
-
----
-
-## Why this project matters
-
-In high-stakes social impact areas (healthcare, education, legal aid), LLMs can hallucinate dangerous advice, spread misinformation, or leak PII.  
-Most commercial safety filters are opaque and cloud-dependent.
-
-**Gemma 4 Safety Guard** provides a **decentralized, explainable, on-premise** middleware that NGOs and social organizations can run locally to protect their users.
-
----
-
-## Key Features
-
-- Uses **Gemma 4 27B** as an expert Safety Auditor (higher reasoning quality than smaller models)
-- **Agentic two-pass pipeline**:
-  1. Topic detection (Gemma pass 1)
-  2. Tool calling (`get_verified_docs()` + `flag_pii()`)
-  3. Grounded safety evaluation with RAG context (Gemma pass 2)
-- Returns structured JSON: `is_safe`, `risk_level`, `reasoning`, `suggested_redaction`
-- Full grounding transparency (shows which verified documents were used)
-- 100% local deployment via Docker + Ollama (no data leaves your machine)
-
----
-
-## Tech Stack
-
-- **Backend**: FastAPI (Python 3.11)
-- **Frontend**: Streamlit (interactive demo dashboard)
-- **Inference**: Ollama serving `gemma4:27b`
-- **Tools**: Mock RAG knowledge base + PII scanner (easily replaceable with ChromaDB + Presidio)
-
----
-
-## Quick Start
-
-```bash
-git clone https://github.com/RetroJoshua/gemma4-safety-guard.git
-cd gemma4-safety-guard
-docker compose up --build
-```
-
-Then open:
-- **Demo UI**: http://localhost:8501
-- **API Docs**: http://localhost:8000/docs
-
-> First run will download the Gemma 4 27B model (can take time).
-
----
-
-## Repository Structure
-
-```
-.
-├── main.py                    # FastAPI safety evaluation service
-├── app.py                     # Streamlit frontend
-├── docker-compose.yml
-├── Dockerfile.api
-├── Dockerfile.frontend
-├── requirements.api.txt
-├── requirements.frontend.txt
-└── README.md
-```
+**Important:** make sure your `main.py` and `app.py` read these env vars (otherwise they may default to `localhost` and fail inside Docker).
 
 ---
 
@@ -81,6 +17,44 @@ Then open:
 ```
 
 The system returns a clear safety verdict, risk level, reasoning, and the grounding documents used.
+
+---
+
+## How it works (pipeline)
+
+1. **Topic detection (Gemma pass 1)**  
+   The system classifies the conversation into a topic (e.g., `medication`, `vaccine`, `mental_health`, `general`).
+
+2. **Tool execution (function-calling style)**  
+   - `get_verified_docs(topic)` returns reference bullets (currently mock KB; swap with real RAG later)
+   - `flag_pii(text)` performs a simple PII keyword scan
+
+3. **Grounded safety evaluation (Gemma pass 2)**  
+   The model audits the AI output **using the retrieved reference docs**, returning strict JSON fields.
+
+4. **Explainable output**  
+   The API returns both the safety verdict and the grounding details used.
+
+---
+
+## Troubleshooting
+
+### The UI loads but evaluation fails / calls the wrong host
+- In Docker, the frontend should call the backend via `API_URL=http://api:8000` (service name, not `localhost`).
+- In Docker, the backend should call Ollama via `GEMMA_API_URL=http://ollama:11434/api/generate` (service name, not `localhost`).
+
+### Timeouts / slow responses
+- 27B may still be downloading/loading.
+- CPU-only inference can be extremely slow for 27B.
+- Try again after the model is fully pulled, or use a smaller model for development.
+
+### Check logs
+
+```bash
+docker compose logs -f ollama
+docker compose logs -f api
+docker compose logs -f frontend
+```
 
 ---
 
@@ -105,3 +79,4 @@ The system returns a clear safety verdict, risk level, reasoning, and the ground
 ---
 
 Made for social good during the Gemma 4 Good Hackathon.
+"""
