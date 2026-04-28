@@ -1,50 +1,29 @@
-# 🛡️ Gemma 4 Safety Guard Engine
+# Gemma 4 Safety Guard Engine (27B) — FastAPI + Streamlit + Ollama
 
-### *Transforming AI Safety through Grounded Reasoning and Local Trust*
+A local-first “trust layer” that audits AI outputs for **safety**, **misinformation**, and **privacy risks** using a **two-pass** evaluator pipeline with **Gemma 4 27B**.
 
-Built for the **Gemma 4 Good Hackathon (Safety & Trust Track)**, the **Gemma 4 Safety Guard Engine** is a production-ready middleware layer that ensures AI-generated content remains safe, factual, and private. It leverages the reasoning power of the **Gemma 4 27B** model to act as an autonomous auditor and grounding agent.
+- **Backend:** FastAPI (Python 3.11)
+- **Frontend:** Streamlit
+- **Model runtime:** Ollama (serving `gemma4:27b`)
+- **Pipeline:** topic detection → tool calls (mock RAG + PII scan) → grounded safety evaluation (JSON)
 
----
+## Why this exists
 
-## 🌍 The Mission
-As AI is deployed in high-stakes social sectors—such as community health, legal aid, and education—the risk of "hallucinations" or unsafe advice increases. Most current safety solutions depend on opaque, cloud-based filters. 
+In high-stakes domains (health, education, legal aid), LLMs can:
+- hallucinate facts,
+- provide harmful instructions,
+- leak or repeat PII.
 
-**Gemma 4 Safety Guard Engine** provides a **decentralized, local-first alternative** that NGOs and social enterprises can run on their own infrastructure to ensure:
-1. **Safety:** Identifying harmful instructions or medical misinformation.
-2. **Trust:** Grounding claims in verified documents via RAG.
-3. **Privacy:** Detecting PII (Personally Identifiable Information) before it leaves the local network.
+This project adds a reusable middleware layer that can sit between a user-facing chatbot and the final response.
 
----
+## Features
 
-## 🚀 Key Features
+- **Gemma 4 27B as Safety Auditor:** higher-quality judgment on nuanced or adversarial prompts.
+- **Agentic two-pass flow:**
+  1. **Topic classification** (Gemma pass 1)
+  2. **Tool execution** (mock `get_verified_docs()`, `flag_pii()`)
+  3. **Grounded audit** with “verified reference docs” (Gemma pass 2)
+- **Structured output:** enforced JSON fields: `is_safe`, `risk_level`, `reasoning`, `suggested_redaction`.
+- **Local-first:** runs fully on your machine via Docker Compose.
 
-- **Gemma 4 27B Auditor:** Uses the high-parameter 27B model for nuanced safety reasoning that smaller models miss.
-- **Agentic Two-Pass Pipeline:** 
-    - *Pass 1:* Detects the topic and triggers relevant internal functions (Function Calling).
-    - *Pass 2:* Re-evaluates content using retrieved "Verified Reference Documents" (Grounding).
-- **Native JSON Enforcement:** Uses Gemma 4’s native JSON mode for reliable downstream integration.
-- **Privacy-First:** Designed to run entirely on-premise using Docker and Ollama, ensuring sensitive user data never touches the public cloud.
-
----
-
-## 🛠️ Technical Architecture
-
-The system is built with a modern, decoupled stack:
-- **Inference Engine:** [Ollama](https://ollama.com/) serving Gemma 4 27B.
-- **Backend API:** [FastAPI](https://fastapi.tiangolo.com/) (Python 3.11) managing the RAG pipeline and tool execution.
-- **Simulation Layer:** Mock RAG knowledge base for medication safety, vaccine facts, and mental health.
-- **Frontend:** [Streamlit](https://streamlit.io/) for an interactive "Safety Dashboard" demo.
-
----
-
-## 📦 Getting Started
-
-### Prerequisites
-- Docker & Docker Compose
-- *Suggested:* NVIDIA GPU with 16GB+ VRAM (for 27B model inference at reasonable speeds).
-
-### Installation & Run
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/RetroJoshua/gemma4-safety-guard.git
-   cd gemma4-safety-guard
+## Repository layout
